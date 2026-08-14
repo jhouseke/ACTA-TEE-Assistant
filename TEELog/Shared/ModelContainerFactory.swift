@@ -15,14 +15,22 @@ import SwiftData
 enum ModelContainerFactory {
     static let appGroupID = "group.com.teelog"
 
+    /// Shared suite so the app, App Intents, and the widget extension all
+    /// read the same preferences (e.g. selectedTrackID).
+    static var sharedDefaults: UserDefaults? { UserDefaults(suiteName: appGroupID) }
+
     static var storeURL: URL {
         let base = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
             ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return base.appendingPathComponent("TEELog.store")
     }
 
-    /// Shared across the app process, App Intents, and the widget extension
-    /// (each process gets its own instance — the URL is what unifies them).
+    /// One container per process: the app creates it once (TEELogApp), and
+    /// App Intents reuse it so no second container opens the same store.
+    /// The widget extension process builds its own via `make()`.
+    static let shared: ModelContainer = make()
+
+    /// Builds a container over the shared store (app, intents, widget).
     static func make() -> ModelContainer {
         let configuration = ModelConfiguration(url: storeURL)
         do {

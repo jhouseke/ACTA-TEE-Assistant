@@ -10,7 +10,7 @@ struct SettingsView: View {
     @AppStorage("profileName") private var profileName = "R. Chen"
     @AppStorage("profileTitle") private var profileTitle = "CT Fellow, PGY-6"
     @AppStorage("appLockEnabled") private var appLockEnabled = false
-    @AppStorage("selectedTrackID") private var trackIDRaw = TrackID.nbeAdvanced.rawValue
+    @AppStorage("selectedTrackID", store: ModelContainerFactory.sharedDefaults) private var trackIDRaw = TrackID.nbeAdvanced.rawValue
 
     /// True when the device can't evaluate the Face ID / passcode policy.
     @State private var lockUnavailable = false

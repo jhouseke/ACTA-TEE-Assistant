@@ -9,7 +9,8 @@ import TEELogCore
 
 struct ProgressScreen: View {
     @Query(sort: \CaseLog.examDate, order: .reverse) private var cases: [CaseLog]
-    @AppStorage("selectedTrackID") private var trackIDRaw = TrackID.nbeAdvanced.rawValue
+    // F1: shared suite so the widget + intents see the same track selection
+    @AppStorage("selectedTrackID", store: ModelContainerFactory.sharedDefaults) private var trackIDRaw = TrackID.nbeAdvanced.rawValue
 
     @State private var viewModel = ProgressViewModel()
 

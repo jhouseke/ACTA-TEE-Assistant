@@ -8,7 +8,7 @@ struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \CaseLog.examDate, order: .reverse) private var cases: [CaseLog]
 
-    @AppStorage("selectedTrackID") private var trackIDRaw = TrackID.nbeAdvanced.rawValue
+    @AppStorage("selectedTrackID", store: ModelContainerFactory.sharedDefaults) private var trackIDRaw = TrackID.nbeAdvanced.rawValue
     @AppStorage("profileName") private var profileName = "R. Chen"
     @AppStorage("profileTitle") private var profileTitle = "CT Fellow, PGY-6"
 

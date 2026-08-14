@@ -4,6 +4,7 @@
 import Foundation
 import Observation
 import SwiftData
+import WidgetKit
 import TEELogCore
 
 @Observable
@@ -147,6 +148,7 @@ final class FindingsViewModel {
             existingCase.categories = categories
             try? context.save()
             QuizCardEnqueuer.enqueue(for: existingCase, context: context) // F3
+            WidgetCenter.shared.reloadAllTimelines() // F1: refresh complication
             return existingCase
         }
 
@@ -173,6 +175,7 @@ final class FindingsViewModel {
         context.insert(caseLog)
         try? context.save()
         QuizCardEnqueuer.enqueue(for: caseLog, context: context) // F3: auto-generate quiz cards
+        WidgetCenter.shared.reloadAllTimelines() // F1: refresh complication
         return caseLog
     }
 }

@@ -8,6 +8,7 @@ struct TEELogApp: App {
     private let container: ModelContainer
 
     @AppStorage("appLockEnabled") private var appLockEnabled = false
+    @AppStorage("quickLogRequested") private var quickLogRequested = false // F1: widget tap-through
     @State private var isUnlocked = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -15,6 +16,11 @@ struct TEELogApp: App {
         WindowGroup {
             RootTabView()
                 .modelContainer(container)
+                .onOpenURL { url in
+                    // F1: teelog://quicklog — widget complication tap-through.
+                    guard url.scheme == "teelog", url.host == "quicklog" else { return }
+                    quickLogRequested = true
+                }
                 .overlay {
                     if appLockEnabled && !isUnlocked {
                         AppLockView(isUnlocked: $isUnlocked)
@@ -47,6 +53,6 @@ struct TEELogApp: App {
     init() {
         // One shared container (app group store) for the app, App Intents,
         // and the widget extension — see ModelContainerFactory (F1).
-        container = ModelContainerFactory.make()
+        container = ModelContainerFactory.shared
     }
 }

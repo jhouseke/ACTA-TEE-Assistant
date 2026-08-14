@@ -36,6 +36,7 @@ targets:
           - Engine/QuizCardGenerator.swift
     dependencies:
       - package: TEELogCore
+      - target: TEEWidget   # widget extension embedded in the app (F1)
     info:
       path: TEELog/Info.plist
       properties:
@@ -47,13 +48,21 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         ITSAppUsesNonExemptEncryption: false
+        # teelog:// scheme — widget tap-through to Quick Log (F1)
+        CFBundleURLTypes:
+          - CFBundleURLName: com.teelog.app
+            CFBundleURLSchemes:
+              - teelog
         # §10 privacy usage strings
         NSSpeechRecognitionUsageDescription: "Dictation turns your spoken findings into log entries, entirely on-device."
         NSMicrophoneUsageDescription: "Used only for dictation while you hold the mic button."
         NSFaceIDUsageDescription: "Unlock your case log."
     entitlements:
       path: TEELog/TEELog.entitlements
-      properties: {}
+      properties:
+        # F1: shared store + preferences between app, intents, and widget
+        com.apple.security.application-groups:
+          - group.com.teelog
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -81,6 +90,47 @@ targets:
       base:
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+
+  # F1: WidgetKit extension — Lock Screen / Home Screen progress complication
+  # ("247/300"), tap-through to Quick Log via teelog://quicklog. Reads the
+  # shared App Group store (ModelContainerFactory), refreshed by
+  # WidgetCenter.reloadAllTimelines() on every case save.
+  TEEWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TEEWidget
+      - path: TEELog/Shared
+      - path: TEELog/Models
+        excludes:
+          # Core files compile into TEELogCore; the widget gets the @Model
+          # entities (CaseLog/ValveFinding/QuizCard) so it can open the
+          # same SwiftData store (same pattern as the TEELog app target).
+          - Enums.swift
+          - Tracks.swift
+          - CaseRecord.swift
+    dependencies:
+      - package: TEELogCore
+    info:
+      path: TEEWidget/Info.plist
+      properties:
+        CFBundleDisplayName: TEE Log Widget
+        NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: TEEWidget/TEEWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.teelog
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
 
 schemes:
   TEELog:
