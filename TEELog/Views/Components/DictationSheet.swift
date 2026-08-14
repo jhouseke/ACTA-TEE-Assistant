@@ -1,7 +1,8 @@
 // DictationSheet.swift — field-level (mode A) and global (mode B) dictation
 // capture (§9.3, §9.5).
 //
-// Flow: permission check → live transcript while listening → on "Done",
+// Flow: permission check → live transcript while listening (with chip fill —
+// recognized values stream in as the transcript grows) → on "Done",
 // DictationMapper.resolve → confirmation diff ("Added: … · Missed: —") with
 // the ability to cancel → onApply(result).
 
@@ -20,6 +21,10 @@ struct DictationSheet: View {
     @State private var result: DictationResult?
     @State private var errorMessage: String?
     @State private var permissionCheckDone = false
+
+    /// Live parse of the streaming transcript — drives the chip fill while
+    /// listening (§9.5: "the parsed field chips fill in real time").
+    @State private var liveResult: DictationResult?
 
     private var title: String {
         guard let field else { return "Dictate" }
@@ -67,6 +72,10 @@ struct DictationSheet: View {
             .task {
                 await startIfPermitted()
             }
+            .onChange(of: controller.transcript) { _, newTranscript in
+                // Re-parse as the transcript streams so chips fill live (§9.5).
+                liveResult = DictationMapper.resolve(newTranscript, field: field)
+            }
             .onDisappear { controller.stop() }
         }
         .presentationDetents([.medium, .large])
@@ -75,13 +84,17 @@ struct DictationSheet: View {
     // MARK: - Listening
 
     private var listeningView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Text(controller.transcript.isEmpty ? "Listening…" : controller.transcript)
                 .font(.title3)
                 .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
                 .padding()
                 .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
                 .accessibilityLabel(controller.transcript.isEmpty ? "Listening" : "Transcript: \(controller.transcript)")
+
+            if let live = liveResult {
+                liveChips(live)
+            }
 
             Button {
                 if controller.isListening {
@@ -108,6 +121,45 @@ struct DictationSheet: View {
         }
     }
 
+    /// Chip fill while listening (§9.5): recognized values stream in as the
+    /// transcript grows, scoped to the active field (or all fields, global).
+    @ViewBuilder
+    private func liveChips(_ live: DictationResult) -> some View {
+        let values = liveValues(live)
+        if !values.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Recognized")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                FlowLayout(spacing: 6) {
+                    ForEach(values, id: \.self) { value in
+                        TagChip(title: value)
+                    }
+                }
+                .accessibilityLabel("Recognized so far: \(values.joined(separator: ", "))")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Human-readable values from a (live or final) parse, e.g.
+    /// ["ME 4C", "TG mid SAX"] for a views dictation.
+    private func liveValues(_ result: DictationResult) -> [String] {
+        var out: [String] = []
+        if let p = result.procedure { out.append(p.displayName) }
+        out.append(contentsOf: result.indications.map(\.displayName).sorted())
+        out.append(contentsOf: result.views.map(\.displayName).sorted())
+        if let q = result.lvefQualitative {
+            out.append("EF \(q)\(result.lvefPercent.map { " \($0)%" } ?? "")")
+        } else if let pct = result.lvefPercent {
+            out.append("EF \(pct)%")
+        }
+        if let rv = result.rvFunction { out.append("RV \(rv.plusNotation)") }
+        out.append(contentsOf: result.valveFindings.map(\.summary))
+        out.append(contentsOf: result.complications.map(\.displayName).sorted())
+        return out
+    }
+
     private func finishRecognition() {
         controller.stop()
         let parsed = DictationMapper.resolve(controller.transcript, field: field)
@@ -119,6 +171,13 @@ struct DictationSheet: View {
 
     private func confirmationView(_ result: DictationResult) -> some View {
         VStack(alignment: .leading, spacing: 16) {
+            Text(summaryLine(result))
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+                .accessibilityLabel("Added: \(addedSummary(result)). Missed: \(missedText(result))")
+
             Text("Added")
                 .font(.headline)
             addedList(result)
@@ -134,6 +193,24 @@ struct DictationSheet: View {
 
             Spacer()
         }
+    }
+
+    /// One-line diff, e.g. "Added: ME 4C, TG mid SAX · Missed: —".
+    /// Single touched field → its values; several → field names.
+    private func summaryLine(_ result: DictationResult) -> String {
+        "Added: \(addedSummary(result)) · Missed: \(missedText(result))"
+    }
+
+    private func addedSummary(_ result: DictationResult) -> String {
+        let lines = diffLines(result)
+        guard !lines.isEmpty else { return "—" }
+        if lines.count == 1 {
+            return String(lines[0].split(separator: ":", maxSplits: 1).last ?? lines[0])
+                .trimmingCharacters(in: .whitespaces)
+        }
+        return lines
+            .map { String($0.split(separator: ":", maxSplits: 1).first ?? $0) }
+            .joined(separator: ", ")
     }
 
     @ViewBuilder

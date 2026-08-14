@@ -14,6 +14,7 @@ struct FindingsView: View {
     @State private var isDictating = false
     @State private var isDictatingViews = false
     @State private var isDictatingLVEF = false
+    @State private var isDictatingRV = false
     @State private var isDictatingValves = false
     @State private var isDictatingNotes = false
     @State private var expandedValve: Valve?
@@ -57,6 +58,11 @@ struct FindingsView: View {
         .sheet(isPresented: $isDictatingLVEF) {
             DictationSheet(field: .lvef) { result in
                 viewModel.apply(result, field: .lvef)
+            }
+        }
+        .sheet(isPresented: $isDictatingRV) {
+            DictationSheet(field: .rvFunction) { result in
+                viewModel.apply(result, field: .rvFunction)
             }
         }
         .sheet(isPresented: $isDictatingValves) {
@@ -147,8 +153,19 @@ struct FindingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("RV function")
-                    .font(.subheadline.weight(.medium))
+                HStack {
+                    Text("RV function")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    // Per-field mic (§9.3 mode A): scoped to .rvFunction.
+                    Button {
+                        isDictatingRV = true
+                    } label: {
+                        Image(systemName: "mic.fill")
+                            .frame(width: 44, height: 44) // ≥ 44 pt (§9.5, §11)
+                    }
+                    .accessibilityLabel("Dictate RV function")
+                }
                 Picker("RV function", selection: $viewModel.rvFunction) {
                     Text("N").tag(SeverityGrade?.none)
                     Text("Mi").tag(SeverityGrade?.some(.mild))
