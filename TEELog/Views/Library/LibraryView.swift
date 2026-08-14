@@ -19,19 +19,29 @@ struct LibraryView: View {
                     .padding(.horizontal)
                     .padding(.vertical, 8)
 
-                List {
-                    ForEach(viewModel.filteredCases) { caseLog in
-                        caseRow(caseLog)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                editingCase = caseLog
-                                isEditing = true
-                            }
+                if cases.isEmpty {
+                    ContentUnavailableView(
+                        "No cases yet",
+                        systemImage: "tray",
+                        description: Text("Log your first case from the Home tab.")
+                    )
+                } else if viewModel.filteredCases.isEmpty {
+                    ContentUnavailableView.search(text: viewModel.searchText)
+                } else {
+                    List {
+                        ForEach(viewModel.filteredCases) { caseLog in
+                            caseRow(caseLog)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    editingCase = caseLog
+                                    isEditing = true
+                                }
+                        }
+                        .onDelete(perform: deleteCases)
                     }
-                    .onDelete(perform: deleteCases)
+                    .listStyle(.plain)
+                    .searchable(text: $viewModel.searchText, prompt: "Search procedure, attending, notes…")
                 }
-                .listStyle(.plain)
-                .searchable(text: $viewModel.searchText, prompt: "Search procedure, attending, notes…")
 
                 footer
             }

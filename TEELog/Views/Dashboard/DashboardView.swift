@@ -14,6 +14,7 @@ struct DashboardView: View {
 
     @State private var viewModel = DashboardViewModel()
     @State private var isLoggingCase = false
+    @State private var isShowingSettings = false
 
     private var trackID: TrackID { TrackID(rawValue: trackIDRaw) ?? .nbeAdvanced }
 
@@ -38,6 +39,14 @@ struct DashboardView: View {
             .navigationTitle("TEE Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isShowingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Settings")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     avatar
                 }
@@ -47,6 +56,9 @@ struct DashboardView: View {
             .onChange(of: trackIDRaw) { _, _ in viewModel.update(cases: cases, trackID: trackID) }
             .sheet(isPresented: $isLoggingCase) {
                 QuickLogView()
+            }
+            .sheet(isPresented: $isShowingSettings) {
+                SettingsView()
             }
         }
     }

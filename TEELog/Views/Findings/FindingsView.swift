@@ -132,10 +132,10 @@ struct FindingsView: View {
                 Text("LV EF")
                     .font(.subheadline.weight(.medium))
                 Picker("LV EF", selection: $viewModel.lvefQualitative) {
-                    Text("N").tag(String?.none)
-                    Text("Mi").tag(String?.some("mild"))
-                    Text("Mo").tag(String?.some("moderate"))
-                    Text("Se").tag(String?.some("severe"))
+                    Text("N").tag(String?.none).accessibilityLabel("Normal")
+                    Text("Mi").tag(String?.some("mild")).accessibilityLabel("Mildly depressed")
+                    Text("Mo").tag(String?.some("moderate")).accessibilityLabel("Moderately depressed")
+                    Text("Se").tag(String?.some("severe")).accessibilityLabel("Severely depressed")
                 }
                 .pickerStyle(.segmented)
                 HStack {
@@ -167,10 +167,10 @@ struct FindingsView: View {
                     .accessibilityLabel("Dictate RV function")
                 }
                 Picker("RV function", selection: $viewModel.rvFunction) {
-                    Text("N").tag(SeverityGrade?.none)
-                    Text("Mi").tag(SeverityGrade?.some(.mild))
-                    Text("Mo").tag(SeverityGrade?.some(.moderate))
-                    Text("Se").tag(SeverityGrade?.some(.severe))
+                    Text("N").tag(SeverityGrade?.none).accessibilityLabel("Normal")
+                    Text("Mi").tag(SeverityGrade?.some(.mild)).accessibilityLabel("Mild dysfunction")
+                    Text("Mo").tag(SeverityGrade?.some(.moderate)).accessibilityLabel("Moderate dysfunction")
+                    Text("Se").tag(SeverityGrade?.some(.severe)).accessibilityLabel("Severe dysfunction")
                 }
                 .pickerStyle(.segmented)
             }

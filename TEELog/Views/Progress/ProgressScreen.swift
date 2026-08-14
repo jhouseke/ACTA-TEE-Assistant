@@ -21,13 +21,22 @@ struct ProgressScreen: View {
                 VStack(alignment: .leading, spacing: 20) {
                     trackPicker
 
-                    if let focus = viewModel.focus {
-                        focusAlert(focus)
+                    if viewModel.cases.isEmpty {
+                        ContentUnavailableView(
+                            "No cases yet",
+                            systemImage: "chart.bar",
+                            description: Text("Logged cases appear here with live progress against your track's minimums.")
+                        )
+                        .padding(.top, 40)
+                    } else {
+                        if let focus = viewModel.focus {
+                            focusAlert(focus)
+                        }
+
+                        categoryCard
+
+                        milestonesCard
                     }
-
-                    categoryCard
-
-                    milestonesCard
                 }
                 .padding()
             }
