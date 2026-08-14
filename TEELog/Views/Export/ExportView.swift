@@ -11,7 +11,11 @@ struct ExportView: View {
 
     @State private var viewModel = ExportViewModel()
     @State private var isSharing = false
+    @State private var shareItems: [Any] = []
     @State private var isExportingPDF = false
+    @State private var pdfData: Data?
+
+    private var hasCasesInRange: Bool { !viewModel.inRange.isEmpty }
 
     var body: some View {
         NavigationStack {
@@ -38,8 +42,12 @@ struct ExportView: View {
                 viewModel.updatePreview()
             }
             .onChange(of: viewModel.reportType) { _, _ in viewModel.updatePreview() }
+            .onChange(of: viewModel.selection) { _, _ in viewModel.updatePreview() }
             .onChange(of: viewModel.rangeStart) { _, _ in viewModel.updatePreview() }
             .onChange(of: viewModel.rangeEnd) { _, _ in viewModel.updatePreview() }
+            .sheet(isPresented: $isSharing) {
+                ShareSheet(items: shareItems)
+            }
         }
     }
 
@@ -76,6 +84,7 @@ struct ExportView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .frame(minHeight: 44) // §11 hit target
             }
         }
     }
@@ -83,18 +92,36 @@ struct ExportView: View {
     // MARK: - Range (§7.5: academic year, Jul 1 – Jun 30)
 
     private var rangePicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Date range")
                 .font(.headline)
-            HStack {
-                DatePicker("From", selection: $viewModel.rangeStart, displayedComponents: .date)
-                DatePicker("To", selection: $viewModel.rangeEnd, displayedComponents: .date)
+            Picker("Date range", selection: $viewModel.selection) {
+                ForEach(viewModel.availableAcademicYears(), id: \.self) { startYear in
+                    Text(ExportViewModel.academicYearLabel(startYear: startYear))
+                        .tag(RangeSelection.academicYear(startYear))
+                }
+                Text("All dates").tag(RangeSelection.all)
+                Text("Custom…").tag(RangeSelection.custom)
             }
-            .labelsHidden()
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+            .pickerStyle(.menu)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel("Date range")
+
+            if viewModel.selection == .custom {
+                HStack {
+                    DatePicker("From", selection: $viewModel.rangeStart, displayedComponents: .date)
+                    DatePicker("To", selection: $viewModel.rangeEnd, displayedComponents: .date)
+                }
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+            }
+
+            Text(viewModel.rangeSummary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+        .padding()
+        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Native preview (no web rendering, §7.5)
@@ -103,15 +130,25 @@ struct ExportView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Preview")
                 .font(.headline)
-            ScrollView {
-                Text(viewModel.previewText.isEmpty ? "No cases in range." : viewModel.previewText)
-                    .font(.system(.caption, design: .monospaced))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-                    .padding()
+            if hasCasesInRange {
+                ScrollView {
+                    Text(viewModel.previewText)
+                        .font(.system(.caption, design: .monospaced))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                        .padding()
+                }
+                .frame(maxHeight: 260)
+                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+            } else {
+                ContentUnavailableView(
+                    "No cases in range",
+                    systemImage: "doc.richtext",
+                    description: Text("Adjust the date range, or log a case from the Home tab.")
+                )
+                .frame(maxHeight: 260)
+                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
             }
-            .frame(maxHeight: 260)
-            .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
@@ -128,7 +165,7 @@ struct ExportView: View {
                     .padding(.vertical, 6)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(viewModel.cases.isEmpty)
+            .disabled(!hasCasesInRange)
 
             Button {
                 preparePDFForFiles()
@@ -139,28 +176,21 @@ struct ExportView: View {
                     .padding(.vertical, 6)
             }
             .buttonStyle(.bordered)
-            .disabled(viewModel.cases.isEmpty)
+            .disabled(!hasCasesInRange)
 
             if let error = viewModel.lastError {
                 Text(error)
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
-
-            // ShareLink hands the generated file to AirDrop/Mail/Files (§8).
-            if let url = viewModel.exportedFileURL {
-                ShareLink(item: url) {
-                    Label("Share \(viewModel.reportType.title)", systemImage: "square.and.arrow.up")
-                }
-                .font(.subheadline)
-            }
         }
         .fileExporter(
             isPresented: $isExportingPDF,
-            document: ExportDocument(data: pdfDataForFiles()),
+            document: ExportDocument(data: pdfData),
             contentType: .pdf,
             defaultFilename: "TEE-Log-Program-Summary"
         ) { result in
+            pdfData = nil
             if case .failure(let error) = result {
                 viewModel.lastError = error.localizedDescription
             }
@@ -169,22 +199,34 @@ struct ExportView: View {
 
     private func prepareForShare() {
         do {
-            _ = try viewModel.buildExport()
+            let url = try viewModel.buildExport()
+            shareItems = [url]
+            isSharing = true
         } catch {
             viewModel.lastError = error.localizedDescription
         }
     }
 
     private func preparePDFForFiles() {
-        viewModel.reportType = .pdf
-        viewModel.updatePreview()
-        isExportingPDF = true
+        do {
+            let url = try viewModel.buildPDF()
+            pdfData = try? Data(contentsOf: url)
+            isExportingPDF = true
+        } catch {
+            viewModel.lastError = error.localizedDescription
+        }
+    }
+}
+
+/// UIActivityViewController wrapper — AirDrop / Mail / Files / Print (§8).
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
     }
 
-    private func pdfDataForFiles() -> Data? {
-        guard let url = try? viewModel.buildExport() else { return nil }
-        return try? Data(contentsOf: url)
-    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 /// FileDocument wrapper for the fileExporter (PDF to Files, §7.5).

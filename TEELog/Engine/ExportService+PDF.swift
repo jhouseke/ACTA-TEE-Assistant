@@ -3,9 +3,11 @@
 // APP TARGET ONLY (UIGraphicsPDFRenderer / PDFKit are Apple-only; the pure
 // content builders live in TEELogCore's ExportService).
 //
-// P5 status: functional skeleton — page 1 renders the header + totals +
-// category table, subsequent pages render the case log table. Typography/
-// pagination polish is P5 scope.
+// Layout (US Letter, 612×792 pt, 40 pt margins):
+//   page 1 — title header + rule, summary rows, category table
+//   page 2+ — case log table (column header repeats on page breaks)
+//   every page — "Page N" footer.
+// Text wraps within columns; rows never split awkwardly across pages.
 
 import Foundation
 import UIKit
@@ -29,51 +31,133 @@ extension ExportService {
         render(content: nbeReportContent(cases: cases, track: track))
     }
 
-    // MARK: - Renderer (P5 skeleton)
+    // MARK: - Renderer
+
+    private enum Layout {
+        static let pageRect = CGRect(x: 0, y: 0, width: 612, height: 792) // US Letter
+        static let margin: CGFloat = 40
+        static let contentWidth = pageRect.width - margin * 2              // 532
+        static let top: CGFloat = 36
+        static let bottom: CGFloat = 48
+        static let columnGap: CGFloat = 16
+        /// Right-aligned totals column (category counts).
+        static let totalsX = pageRect.width - margin - 160
+        static let totalsWidth: CGFloat = 160
+        /// Case table: date column + wrapped detail column.
+        static let dateColumnWidth: CGFloat = 76
+        static let caseDetailX = margin + dateColumnWidth + columnGap
+        static let caseDetailWidth = contentWidth - dateColumnWidth - columnGap
+    }
 
     private static func render(content: ReportContent) -> URL {
         let format = UIGraphicsPDFRendererFormat()
-        let pageRect = CGRect(x: 0, y: 0, width: 612, height: 792) // US Letter
-        let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
+        format.documentInfo = [
+            kCGPDFContextTitle as String: content.title,
+            kCGPDFContextAuthor as String: "TEE Log"
+        ]
+        let renderer = UIGraphicsPDFRenderer(bounds: Layout.pageRect, format: format)
 
         let data = renderer.pdfData { ctx in
+            var page = 0
             var y: CGFloat = 0
 
-            ctx.beginPage()
-            y = drawHeader(title: content.title, subtitle: content.subtitle, at: y, in: pageRect)
+            func beginPage() {
+                ctx.beginPage()
+                page += 1
+                y = Layout.top
+            }
+
+            /// Footer for the page we are leaving, then start a new one.
+            func newPage() {
+                pageNumber(page)
+                beginPage()
+            }
+
+            /// Start a new page if `needed` points doesn't fit below y.
+            func ensure(_ needed: CGFloat) {
+                if y + needed > Layout.pageRect.height - Layout.bottom {
+                    newPage()
+                }
+            }
+
+            func pageNumber(_ number: Int) {
+                let text = "Page \(number)" as NSString
+                let attrs: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: 9),
+                    .foregroundColor: UIColor.secondaryLabel
+                ]
+                let size = text.size(withAttributes: attrs)
+                text.draw(
+                    at: CGPoint(x: (Layout.pageRect.width - size.width) / 2, y: Layout.pageRect.height - 32),
+                    withAttributes: attrs
+                )
+            }
+
+            beginPage()
+            y = drawHeader(title: content.title, subtitle: content.subtitle, at: y, ctx: ctx)
+            y += 14
 
             // Summary rows
             for row in content.summaryRows {
-                y = drawLine(left: "\(row.label):  \(row.value)", at: y, in: pageRect, bold: false)
+                ensure(22)
+                y = drawLabelValue(label: row.label, value: row.value, at: y)
+                y += 5
             }
-            y += 12
+            if !content.summaryRows.isEmpty { y += 8 }
 
-            // Category table
-            y = drawLine(left: "Category", right: "count / minimum", at: y, in: pageRect, bold: true)
-            for row in content.categoryRows {
-                let check = row.met ? " ✓" : ""
-                y = drawLine(
-                    left: row.category,
-                    right: "\(row.count) / \(row.minimum)\(check)",
-                    at: y, in: pageRect, bold: false
-                )
-                if y > pageRect.height - 72 {
-                    ctx.beginPage()
-                    y = 40
+            // Category table (NBE + PDF reports)
+            if !content.categoryRows.isEmpty {
+                ensure(28)
+                y = drawTableHeader(left: "Category", right: "count / minimum", at: y)
+                y += 4
+                for row in content.categoryRows {
+                    let check = row.met ? " ✓" : ""
+                    let pageBefore = page
+                    ensure(20)
+                    if page != pageBefore {
+                        // Fresh page: repeat the column header.
+                        y = drawTableHeader(left: "Category", right: "count / minimum", at: y)
+                        y += 4
+                    }
+                    drawSeparator(at: y - 2, ctx: ctx)
+                    y = drawTableRow(
+                        left: row.category,
+                        right: "\(row.count) / \(row.minimum)\(check)",
+                        at: y,
+                        rightColor: row.met ? UIColor.systemGreen : UIColor.label
+                    )
+                    y += 3
                 }
+                y += 10
             }
 
-            // Case log table
-            y += 12
-            y = drawLine(left: "Date", right: "Procedure — attending (role, CPB) — categories", at: y, in: pageRect, bold: true)
-            for row in content.caseRows {
-                let text = "\(row.procedure) — \(row.attending) (\(row.role), \(row.cpb)) — \(row.categories)"
-                y = drawLine(left: row.date, right: text, at: y, in: pageRect, bold: false)
-                if y > pageRect.height - 72 {
-                    ctx.beginPage()
-                    y = 40
+            // Case log table (ACGME + PDF reports)
+            if !content.caseRows.isEmpty {
+                ensure(32)
+                y = drawSectionTitle("Case log", at: y)
+                y += 8
+                y = drawCaseHeader(at: y)
+                y += 4
+                for row in content.caseRows {
+                    let text = "\(row.procedure) — \(row.attending) (\(row.role), \(row.cpb)) — \(row.categories)"
+                    let needed = height(of: text, width: Layout.caseDetailWidth, font: bodyFont)
+                    let pageBefore = page
+                    ensure(needed + 8)
+                    if page != pageBefore {
+                        // Fresh page: repeat the column header.
+                        y = drawCaseHeader(at: y)
+                        y += 4
+                    }
+                    drawSeparator(at: y - 2, ctx: ctx)
+                    y = drawCaseRow(date: row.date, detail: text, at: y)
+                    y += 6
                 }
+            } else if content.summaryRows.isEmpty, content.categoryRows.isEmpty {
+                ensure(24)
+                y = drawText("No cases in range.", at: y, font: bodyFont, color: .secondaryLabel)
             }
+
+            pageNumber(page)
         }
 
         let url = FileManager.default.temporaryDirectory
@@ -82,32 +166,124 @@ extension ExportService {
         return url
     }
 
-    private static func drawHeader(title: String, subtitle: String, at y: CGFloat, in pageRect: CGRect) -> CGFloat {
-        var cursor = y + 40
-        (title as NSString).draw(
-            at: CGPoint(x: 40, y: cursor),
-            withAttributes: [.font: UIFont.boldSystemFont(ofSize: 20)]
-        )
-        cursor += 26
-        (subtitle as NSString).draw(
-            at: CGPoint(x: 40, y: cursor),
-            withAttributes: [.font: UIFont.systemFont(ofSize: 12), .foregroundColor: UIColor.secondaryLabel]
-        )
-        return cursor + 16
+    // MARK: - Drawing primitives
+
+    private static let titleFont = UIFont.boldSystemFont(ofSize: 20)
+    private static let subtitleFont = UIFont.systemFont(ofSize: 12)
+    private static let sectionFont = UIFont.boldSystemFont(ofSize: 14)
+    private static let headerFont = UIFont.boldSystemFont(ofSize: 11)
+    private static let bodyFont = UIFont.systemFont(ofSize: 11)
+
+    /// Title + subtitle + rule; returns the y below the rule.
+    private static func drawHeader(title: String, subtitle: String, at y: CGFloat, ctx: UIGraphicsPDFRendererContext) -> CGFloat {
+        var cursor = drawText(title, at: CGPoint(x: Layout.margin, y: y), font: titleFont, color: .label)
+        cursor += 2
+        cursor = drawText(subtitle, at: CGPoint(x: Layout.margin, y: cursor), font: subtitleFont, color: .secondaryLabel)
+        cursor += 8
+        drawSeparator(at: cursor, ctx: ctx)
+        return cursor + 10
     }
 
-    private static func drawLine(left: String, right: String = "", at y: CGFloat, in pageRect: CGRect, bold: Bool) -> CGFloat {
-        let font = bold ? UIFont.boldSystemFont(ofSize: 11) : UIFont.systemFont(ofSize: 11)
-        (left as NSString).draw(
-            at: CGPoint(x: 40, y: y),
-            withAttributes: [.font: font]
+    /// "label: value" on one line; value wraps if long. Returns the y below.
+    private static func drawLabelValue(label: String, value: String, at y: CGFloat) -> CGFloat {
+        let labelWidth: CGFloat = 170
+        let labelY = drawText(label, at: CGPoint(x: Layout.margin, y: y), font: headerFont, color: .label)
+        let valueRect = CGRect(
+            x: Layout.margin + labelWidth,
+            y: y,
+            width: Layout.contentWidth - labelWidth,
+            height: .greatestFiniteMagnitude
         )
-        if !right.isEmpty {
-            (right as NSString).draw(
-                at: CGPoint(x: 220, y: y),
-                withAttributes: [.font: font]
-            )
-        }
-        return y + 16
+        let valueHeight = drawWrapped(value, in: valueRect, font: bodyFont, color: .label)
+        return max(labelY, y + valueHeight)
+    }
+
+    /// Category table header row.
+    private static func drawTableHeader(left: String, right: String, at y: CGFloat) -> CGFloat {
+        let leftHeight = drawText(left, at: CGPoint(x: Layout.margin, y: y), font: headerFont, color: .label)
+        let rightRect = CGRect(x: Layout.totalsX, y: y, width: Layout.totalsWidth, height: .greatestFiniteMagnitude)
+        let rightHeight = drawRight(right, in: rightRect, font: headerFont, color: .secondaryLabel)
+        return max(leftHeight, y + rightHeight)
+    }
+
+    private static func drawTableRow(left: String, right: String, at y: CGFloat, rightColor: UIColor) -> CGFloat {
+        let leftHeight = drawText(left, at: CGPoint(x: Layout.margin, y: y), font: bodyFont, color: .label)
+        let rightRect = CGRect(x: Layout.totalsX, y: y, width: Layout.totalsWidth, height: .greatestFiniteMagnitude)
+        let rightHeight = drawRight(right, in: rightRect, font: bodyFont, color: rightColor)
+        return max(leftHeight, y + rightHeight)
+    }
+
+    /// Case log table: "Date" + "Procedure — attending (role, CPB) — categories".
+    private static func drawCaseHeader(at y: CGFloat) -> CGFloat {
+        let leftHeight = drawText("Date", at: CGPoint(x: Layout.margin, y: y), font: headerFont, color: .label)
+        let detailRect = CGRect(x: Layout.caseDetailX, y: y, width: Layout.caseDetailWidth, height: .greatestFiniteMagnitude)
+        let rightHeight = drawWrapped(
+            "Procedure — attending (role, CPB) — categories",
+            in: detailRect, font: headerFont, color: .secondaryLabel
+        )
+        return max(leftHeight, y + rightHeight)
+    }
+
+    private static func drawCaseRow(date: String, detail: String, at y: CGFloat) -> CGFloat {
+        let dateHeight = drawText(date, at: CGPoint(x: Layout.margin, y: y), font: bodyFont, color: .label)
+        let detailRect = CGRect(x: Layout.caseDetailX, y: y, width: Layout.caseDetailWidth, height: .greatestFiniteMagnitude)
+        let detailHeight = drawWrapped(detail, in: detailRect, font: bodyFont, color: .label)
+        return max(dateHeight, y + detailHeight)
+    }
+
+    private static func drawSectionTitle(_ title: String, at y: CGFloat) -> CGFloat {
+        drawText(title, at: CGPoint(x: Layout.margin, y: y), font: sectionFont, color: .label)
+    }
+
+    /// Single-line text at a point; returns the y below the line.
+    @discardableResult
+    private static func drawText(_ text: String, at point: CGPoint, font: UIFont, color: UIColor) -> CGFloat {
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+        (text as NSString).draw(at: point, withAttributes: attrs)
+        return point.y + font.lineHeight
+    }
+
+    /// Word-wrapped text in a rect; returns the height used.
+    private static func drawWrapped(_ text: String, in rect: CGRect, font: UIFont, color: UIColor) -> CGFloat {
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+        let options: NSStringDrawingOptions = [.usesLineFragmentOrigin, .usesFontLeading]
+        (text as NSString).draw(with: rect, options: options, attributes: attrs, context: nil)
+        return height(of: text, width: rect.width, font: font)
+    }
+
+    /// Right-aligned wrapped text (totals column).
+    private static func drawRight(_ text: String, in rect: CGRect, font: UIFont, color: UIColor) -> CGFloat {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .right
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: color,
+            .paragraphStyle: paragraph
+        ]
+        let options: NSStringDrawingOptions = [.usesLineFragmentOrigin, .usesFontLeading]
+        (text as NSString).draw(with: rect, options: options, attributes: attrs, context: nil)
+        return height(of: text, width: rect.width, font: font)
+    }
+
+    /// Wrapped height of a text at a given width.
+    private static func height(of text: String, width: CGFloat, font: UIFont) -> CGFloat {
+        let attrs: [NSAttributedString.Key: Any] = [.font: font]
+        let bounds = (text as NSString).boundingRect(
+            with: CGSize(width: width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attrs,
+            context: nil
+        )
+        return ceil(bounds.height)
+    }
+
+    /// Hairline separator across the content width.
+    private static func drawSeparator(at y: CGFloat, ctx: UIGraphicsPDFRendererContext) {
+        let cg = ctx.cgContext
+        cg.setStrokeColor(UIColor.systemGray4.cgColor)
+        cg.setLineWidth(0.5)
+        cg.move(to: CGPoint(x: Layout.margin, y: y))
+        cg.addLine(to: CGPoint(x: Layout.pageRect.width - Layout.margin, y: y))
+        cg.strokePath()
     }
 }
