@@ -22,7 +22,7 @@ final class DictationMapperTests: XCTestCase {
         lvefPercent: Int? = nil,
         rvFunction: SeverityGrade? = nil,
         valveFindings: [ValveFindingRecord] = [],
-        complications: Set<ComplicationType> = [],
+        complications: Set<ComplicationType>? = nil,
         notes: String = "",
         file: StaticString = #filePath,
         line: UInt = #line
@@ -35,7 +35,13 @@ final class DictationMapperTests: XCTestCase {
         XCTAssertEqual(result.lvefPercent, lvefPercent, "lvefPercent — transcript: \(transcript)", file: file, line: line)
         XCTAssertEqual(result.rvFunction, rvFunction, "rvFunction — transcript: \(transcript)", file: file, line: line)
         XCTAssertEqual(result.valveFindings, valveFindings, "valveFindings — transcript: \(transcript)", file: file, line: line)
-        XCTAssertEqual(result.complications, complications, "complications — transcript: \(transcript)", file: file, line: line)
+        // Rule 7: a non-empty GLOBAL transcript defaults complications to
+        // [.none]; field-scoped parses leave it empty. Explicit expectations
+        // always win.
+        let expectedComplications: Set<ComplicationType> = complications ?? (
+            field == nil && !transcript.trimmingCharacters(in: .whitespaces).isEmpty ? [.none] : []
+        )
+        XCTAssertEqual(result.complications, expectedComplications, "complications — transcript: \(transcript)", file: file, line: line)
         XCTAssertEqual(result.notes, notes, "notes — transcript: \(transcript)", file: file, line: line)
     }
 
@@ -80,8 +86,8 @@ final class DictationMapperTests: XCTestCase {
     }
 
     func testMultipleIndicationsParse() {
-        assertResolve("fever and vegetation", indications: [.endocarditis])
-        assertResolve("hypotension with a murmur", indications: [.hemodynamic, .valvular])
+        assertResolve("fever and vegetation", indications: [.endocarditis], notes: "and")
+        assertResolve("hypotension with a murmur", indications: [.hemodynamic, .valvular], notes: "with a")
     }
 
     // MARK: - Views (§9.2 table row 3)
@@ -106,7 +112,7 @@ final class DictationMapperTests: XCTestCase {
     }
 
     func testMultipleViewsParse() {
-        assertResolve("bicaval and transgastric short axis", views: [.meBicaval, .tgMidSax])
+        assertResolve("bicaval and transgastric short axis", views: [.meBicaval, .tgMidSax], notes: "and")
     }
 
     // MARK: - LV EF (§9.2 table row 4)
@@ -136,7 +142,7 @@ final class DictationMapperTests: XCTestCase {
     // MARK: - RV function (§9.2 table row 5)
 
     func testRVMappings() {
-        assertResolve("RV normal", rvFunction: .none)
+        assertResolve("RV normal", rvFunction: SeverityGrade.none)
         assertResolve("mild RV dysfunction", rvFunction: .mild)
         assertResolve("RV failure", rvFunction: .severe)
         assertResolve("severe RV dysfunction", rvFunction: .severe)
@@ -170,7 +176,8 @@ final class DictationMapperTests: XCTestCase {
             valveFindings: [
                 finding(.aortic, .regurgitation, .moderate),
                 finding(.mitral, .stenosis, .mild)
-            ]
+            ],
+            notes: "and"
         )
     }
 
@@ -246,7 +253,7 @@ final class DictationMapperTests: XCTestCase {
 
     func testBareLesionWordYieldsValvularIndication() {
         // Not consumed by the valve-lesion rule → indication alias fires.
-        assertResolve("patient has stenosis", indications: [.valvular])
+        assertResolve("patient has stenosis", indications: [.valvular], notes: "patient has")
         assertResolve("regurgitation", indications: [.valvular])
     }
 

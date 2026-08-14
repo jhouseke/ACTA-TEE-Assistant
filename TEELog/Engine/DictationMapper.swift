@@ -491,8 +491,25 @@ public enum DictationMapper {
         return replaceWordNumbers(in: stripped)
     }
 
+    /// Word numbers → digits before "percent" ("thirty percent" → "30 percent")
+    /// and before "plus" ("three plus" → "3+", so the §9.4 N+ severity regex
+    /// matches). "four chamber" is untouched ("chamber" is neither).
     private static func replaceWordNumbers(in text: String) -> String {
-        let pattern = #"\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b(?=\s+(?:plus|percent))"#
+        // Pass 1: number word + "percent" → digit + " percent".
+        let percentPattern = #"\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b(?=\s+percent\b)"#
+        var result = replaceWords(matching: percentPattern, in: text) { word in
+            wordNumbers[word] ?? word
+        }
+        // Pass 2: number word + "plus" → "N+".
+        let plusPattern = #"\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b\s+plus\b"#
+        result = replaceWords(matching: plusPattern, in: result) { match in
+            let word = match.split(separator: " ").first.map(String.init) ?? match
+            return (wordNumbers[word] ?? word) + "+"
+        }
+        return result
+    }
+
+    private static func replaceWords(matching pattern: String, in text: String, transform: (String) -> String) -> String {
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return text }
         let ns = text as NSString
         let full = NSRange(location: 0, length: ns.length)
@@ -503,7 +520,7 @@ public enum DictationMapper {
         for m in matches {
             out += ns.substring(with: NSRange(location: cursor, length: m.range.location - cursor))
             let word = ns.substring(with: m.range)
-            out += wordNumbers[word] ?? word
+            out += transform(word)
             cursor = m.range.location + m.range.length
         }
         out += ns.substring(from: cursor)

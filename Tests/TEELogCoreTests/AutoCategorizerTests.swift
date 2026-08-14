@@ -104,13 +104,13 @@ final class AutoCategorizerTests: XCTestCase {
     // MARK: - Finding-driven categories
 
     func testValveFindingsTriggerValvular() {
-        assertCategories(.cabg, [], valveFindings: [finding(.mitral, .regurgitation, .severe)], expected: [.valvular])
-        assertCategories(.cabg, [], valveFindings: [finding(.aortic, .stenosis, .mild)], expected: [.valvular])
+        assertCategories(.cabg, [], [finding(.mitral, .regurgitation, .severe)], expected: [.valvular])
+        assertCategories(.cabg, [], [finding(.aortic, .stenosis, .mild)], expected: [.valvular])
     }
 
     func testValveFindingsSeverityDoesNotMatterForCategory() {
         // Even a trace finding counts toward the valvular category.
-        assertCategories(.cabg, [], valveFindings: [finding(.tricuspid, .regurgitation, .trace)], expected: [.valvular])
+        assertCategories(.cabg, [], [finding(.tricuspid, .regurgitation, .trace)], expected: [.valvular])
     }
 
     // MARK: - Ventricular function
@@ -141,7 +141,7 @@ final class AutoCategorizerTests: XCTestCase {
         assertCategories(
             .avr,
             [.hemodynamic, .endocarditis],
-            valveFindings: [finding(.aortic, .regurgitation, .severe)],
+            [finding(.aortic, .regurgitation, .severe)],
             lvef: "severe",
             expected: [.valvular, .hemodynamic, .endocarditis, .ventricular]
         )

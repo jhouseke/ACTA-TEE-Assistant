@@ -72,9 +72,9 @@ final class RequirementsEngineTests: XCTestCase {
         XCTAssertTrue(over.isMet)
 
         let zero = CategoryProgress(category: .valvular, count: 0, minimum: 0)
-        XCTAssertEqual(zero.percent, 1) // no division by zero
+        XCTAssertEqual(zero.percent, 0) // §5.2 formula: max(minimum, 1) guards div-by-zero
         XCTAssertEqual(zero.gap, 0)
-        XCTAssertTrue(zero.isMet)
+        XCTAssertTrue(zero.isMet) // nothing required → met
     }
 
     // MARK: - Overall percent

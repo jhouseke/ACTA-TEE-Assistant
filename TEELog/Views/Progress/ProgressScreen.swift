@@ -102,7 +102,7 @@ struct ProgressScreen: View {
                 .font(.headline)
             if let projected = viewModel.projectedDate {
                 Label(
-                    "Projected \(projected.formatted(.dateTime.month(.wide).year())) — \(viewModel.monthsLeft) mo \(viewModel.monthsLeft == 1 ? "ahead" : "ahead")",
+                    "Projected \(projected.formatted(.dateTime.month(.wide).year())) — \(viewModel.monthsLeft) mo ahead",
                     systemImage: "calendar"
                 )
                 .font(.subheadline)

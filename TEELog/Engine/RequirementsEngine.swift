@@ -99,14 +99,15 @@ public enum RequirementsEngine {
 
     /// Projected date the total-case minimum is reached, extrapolating the
     /// observed rate from the earliest exam date to now. Returns nil when
-    /// there are no cases or no elapsed time.
+    /// there are no cases; returns `now` when the minimum is already met.
     public static func projectedCompletionDate(
         total: Int,
         totalMinimum: Int,
         earliestExamDate: Date,
         now: Date = Date()
     ) -> Date? {
-        guard total > 0, totalMinimum > total else { return now }
+        guard total > 0 else { return nil }
+        guard totalMinimum > total else { return now }
         let elapsed = max(now.timeIntervalSince(earliestExamDate), 86400) // ≥ 1 day
         let rate = Double(total) / elapsed // cases per second
         let remaining = Double(totalMinimum - total)

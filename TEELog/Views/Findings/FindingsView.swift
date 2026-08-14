@@ -136,10 +136,13 @@ struct FindingsView: View {
                     Text("EF %")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    TextField("e.g. 45", value: $viewModel.lvefPercent, format: .number)
-                        .keyboardType(.numberPad)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 90)
+                    TextField("e.g. 45", text: Binding(
+                        get: { viewModel.lvefPercent.map(String.init) ?? "" },
+                        set: { viewModel.lvefPercent = Int($0) }
+                    ))
+                    .keyboardType(.numberPad)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 90)
                 }
             }
 

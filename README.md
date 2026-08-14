@@ -37,6 +37,18 @@ only Foundation, so the engine logic is unit-testable on Linux with
 $ swift test
 ```
 
+On this Silverblue host (no system toolchain), tests run via rootless
+podman with the swift.org tarball mounted in:
+
+```
+$ podman build -t teelog-swift -f ~/swift/Dockerfile ~/swift   # once
+$ podman run --rm -v ~/swift:/swift:ro,Z -v "$PWD":/work:Z -w /work \
+      teelog-swift /swift/usr/bin/swift test
+```
+
+Result: 66 tests green (AutoCategorizer ×18, DictationMapper ×32,
+RequirementsEngine ×16).
+
 ## Building the app (on a Mac)
 
 1. Install [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
