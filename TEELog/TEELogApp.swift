@@ -45,10 +45,8 @@ struct TEELogApp: App {
     }
 
     init() {
-        do {
-            container = try ModelContainer(for: CaseLog.self, ValveFinding.self)
-        } catch {
-            fatalError("Failed to create ModelContainer: \(error)")
-        }
+        // One shared container (app group store) for the app, App Intents,
+        // and the widget extension — see ModelContainerFactory (F1).
+        container = ModelContainerFactory.make()
     }
 }

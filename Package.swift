@@ -33,7 +33,9 @@ let package = Package(
                 "TEELog/Engine/RequirementsEngine.swift",
                 "TEELog/Engine/AutoCategorizer.swift",
                 "TEELog/Engine/DictationMapper.swift",
-                "TEELog/Engine/ExportService.swift"
+                "TEELog/Engine/ExportService.swift",
+                "TEELog/Engine/SpacedRepetition.swift",
+                "TEELog/Engine/QuizCardGenerator.swift"
             ]
         ),
         .testTarget(

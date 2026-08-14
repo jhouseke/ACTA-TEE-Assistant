@@ -7,14 +7,20 @@ import TEELogCore
 struct LibraryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \CaseLog.examDate, order: .reverse) private var cases: [CaseLog]
+    @Query private var quizCards: [QuizCard]   // F3: quiz deck for the Review entry
 
     @State private var viewModel = LibraryViewModel()
     @State private var editingCase: CaseLog?
     @State private var isEditing = false
+    @State private var isReviewing = false     // F3: Review session sheet
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                reviewEntry
+                    .padding(.horizontal)
+                    .padding(.top, 4)
+
                 filterChips
                     .padding(.horizontal)
                     .padding(.vertical, 8)
@@ -75,7 +81,45 @@ struct LibraryView: View {
                     }
                 }
             }
+            .sheet(isPresented: $isReviewing) {
+                ReviewSessionView(cards: dueCardModels)
+            }
         }
+    }
+
+    // MARK: - Review entry (F3)
+
+    /// "Review · N cards due" — entry point to the quiz session (FEATURES.md
+    /// F3). Due = scheduled at/before now, per the SM-2 scheduler.
+    private var dueCardModels: [QuizCard] {
+        let dueIDs = Set(SpacedRepetition.dueCards(quizCards.map(\.record), now: .now).map(\.id))
+        return quizCards
+            .filter { dueIDs.contains($0.id) }
+            .sorted { $0.dueDate < $1.dueDate }
+    }
+
+    private var reviewEntry: some View {
+        Button {
+            isReviewing = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "graduationcap.fill")
+                    .foregroundStyle(.tint)
+                Text("Review · \(dueCardModels.count) card\(dueCardModels.count == 1 ? "" : "s") due")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 44) // §11 hit target
+            .padding(.horizontal, 14)
+            .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Review, \(dueCardModels.count) cards due")
+        .accessibilityHint("Starts a spaced-repetition quiz from your logged cases")
     }
 
     // MARK: - Filter chips (§7.6)

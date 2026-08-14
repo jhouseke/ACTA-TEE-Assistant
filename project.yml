@@ -32,6 +32,8 @@ targets:
           - Engine/AutoCategorizer.swift
           - Engine/DictationMapper.swift
           - Engine/ExportService.swift
+          - Engine/SpacedRepetition.swift
+          - Engine/QuizCardGenerator.swift
     dependencies:
       - package: TEELogCore
     info:

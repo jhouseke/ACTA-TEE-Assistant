@@ -146,6 +146,7 @@ final class FindingsViewModel {
             existingCase.notes = notes
             existingCase.categories = categories
             try? context.save()
+            QuizCardEnqueuer.enqueue(for: existingCase, context: context) // F3
             return existingCase
         }
 
@@ -171,6 +172,7 @@ final class FindingsViewModel {
         )
         context.insert(caseLog)
         try? context.save()
+        QuizCardEnqueuer.enqueue(for: caseLog, context: context) // F3: auto-generate quiz cards
         return caseLog
     }
 }
