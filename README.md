@@ -61,18 +61,23 @@ RequirementsEngine ×16).
 The `.xcodeproj` is generated and git-ignored — `project.yml` is the source
 of truth.
 
-## Phase status
+## Phase status (v1.0 complete)
 
 - P1 Skeleton — done (models, enums, tab shell, project definition)
 - P2 Capture — done (Quick Log 3-step flow, Findings, auto-categorize,
   Dashboard + Library read views)
 - P3 Requirements — done (engine, Progress screen, gap alerts)
-- P4 Dictation — engine + mapper + SpeechController implemented; UX polish
-  (live chip fill while listening) remains
-- P5 Export — CSV writer + report content builders done; PDF rendering
-  (UIGraphicsPDFRenderer) is skeleton
-- P6 Hardening — Face ID lock skeleton present; accessibility pass,
-  empty/error states remain
+- P4 Dictation — done (engine + mapper + SpeechController; DictationSheet
+  with live chip fill while listening, confirmation diff, field-level mics
+  on Procedure / Indication / Views / LV EF / RV / Valve lesions / Notes,
+  speech-not-authorized + on-device-unavailable states with manual fallback)
+- P5 Export — done (CSV writer; ACGME / NBE / PDF content builders;
+  multi-page UIGraphicsPDFRenderer with wrapping + page breaks + footers;
+  academic-year range; native preview; share sheet + Save PDF to Files)
+- P6 Hardening — done (Face ID / passcode lock with settings toggle and
+  background re-lock; VoiceOver labels incl. severity steppers and progress
+  bars; Dynamic Type safe; ≥44 pt targets; Reduce Motion respected; system
+  colors only; empty states on Dashboard, Library, Progress, Export, Findings)
 
 See `IMPLEMENTATION.md` (§12–§15) for phase details and open product
 questions (track minima placeholders marked in `Tracks.swift`).

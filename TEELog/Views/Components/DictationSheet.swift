@@ -205,11 +205,11 @@ struct DictationSheet: View {
         let lines = diffLines(result)
         guard !lines.isEmpty else { return "—" }
         if lines.count == 1 {
-            return String(lines[0].split(separator: ":", maxSplits: 1).last ?? lines[0])
-                .trimmingCharacters(in: .whitespaces)
+            let value = lines[0].split(separator: ":", maxSplits: 1).last.map(String.init) ?? lines[0]
+            return value.trimmingCharacters(in: .whitespaces)
         }
         return lines
-            .map { String($0.split(separator: ":", maxSplits: 1).first ?? $0) }
+            .map { String($0.split(separator: ":", maxSplits: 1).first ?? Substring($0)) }
             .joined(separator: ", ")
     }
 

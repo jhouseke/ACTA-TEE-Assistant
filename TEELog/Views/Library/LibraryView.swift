@@ -26,7 +26,15 @@ struct LibraryView: View {
                         description: Text("Log your first case from the Home tab.")
                     )
                 } else if viewModel.filteredCases.isEmpty {
-                    ContentUnavailableView.search(text: viewModel.searchText)
+                    if viewModel.searchText.isEmpty {
+                        ContentUnavailableView(
+                            "No matching cases",
+                            systemImage: "line.3.horizontal.decrease.circle",
+                            description: Text("No cases match the selected filter.")
+                        )
+                    } else {
+                        ContentUnavailableView.search(text: viewModel.searchText)
+                    }
                 } else {
                     List {
                         ForEach(viewModel.filteredCases) { caseLog in
@@ -40,11 +48,11 @@ struct LibraryView: View {
                         .onDelete(perform: deleteCases)
                     }
                     .listStyle(.plain)
-                    .searchable(text: $viewModel.searchText, prompt: "Search procedure, attending, notes…")
                 }
 
                 footer
             }
+            .searchable(text: $viewModel.searchText, prompt: "Search procedure, attending, notes…")
             .navigationTitle("Cases")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { viewModel.cases = cases }
