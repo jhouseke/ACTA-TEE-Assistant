@@ -13,6 +13,13 @@ struct LibraryView: View {
     @State private var editingCase: CaseLog?
     @State private var isEditing = false
     @State private var isReviewing = false     // F3: Review session sheet
+    @State private var initialFilter: LibraryFilter? // F2: applied once on appear (Insights tap-through)
+
+    /// F2: Insights cards push a pre-filtered Library (reusing the existing
+    /// filter chips — FEATURES.md F2 acceptance).
+    init(initialFilter: LibraryFilter? = nil) {
+        _initialFilter = State(initialValue: initialFilter)
+    }
 
     var body: some View {
         NavigationStack {
@@ -61,7 +68,13 @@ struct LibraryView: View {
             .searchable(text: $viewModel.searchText, prompt: "Search procedure, attending, notes…")
             .navigationTitle("Cases")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear { viewModel.cases = cases }
+            .onAppear {
+                viewModel.cases = cases
+                if let filter = initialFilter { // F2: one-shot from Insights tap-through
+                    viewModel.filter = filter
+                    initialFilter = nil
+                }
+            }
             .onChange(of: cases.count) { _, _ in viewModel.cases = cases }
             .sheet(isPresented: $isEditing) {
                 if let editingCase {

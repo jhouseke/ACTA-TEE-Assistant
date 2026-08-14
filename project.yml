@@ -34,6 +34,7 @@ targets:
           - Engine/ExportService.swift
           - Engine/SpacedRepetition.swift
           - Engine/QuizCardGenerator.swift
+          - Engine/InsightsEngine.swift
     dependencies:
       - package: TEELogCore
       - target: TEEWidget   # widget extension embedded in the app (F1)

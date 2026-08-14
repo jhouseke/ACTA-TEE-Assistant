@@ -43,6 +43,17 @@ struct ProgressScreen: View {
             }
             .navigationTitle("Requirements")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                // F2: Insights screen entry — Progress tab header
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        InsightsView()
+                    } label: {
+                        Label("Insights", systemImage: "chart.bar.xaxis")
+                    }
+                    .accessibilityLabel("Personal pattern insights")
+                }
+            }
             .onAppear { viewModel.update(cases: cases, trackID: trackID) }
             .onChange(of: cases.count) { _, _ in viewModel.update(cases: cases, trackID: trackID) }
             .onChange(of: trackIDRaw) { _, _ in viewModel.update(cases: cases, trackID: trackID) }

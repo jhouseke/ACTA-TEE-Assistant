@@ -35,7 +35,8 @@ let package = Package(
                 "TEELog/Engine/DictationMapper.swift",
                 "TEELog/Engine/ExportService.swift",
                 "TEELog/Engine/SpacedRepetition.swift",
-                "TEELog/Engine/QuizCardGenerator.swift"
+                "TEELog/Engine/QuizCardGenerator.swift",
+                "TEELog/Engine/InsightsEngine.swift"
             ]
         ),
         .testTarget(
