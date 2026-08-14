@@ -30,6 +30,18 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<!-- F1: teelog:// scheme — widget complication tap-through to Quick Log -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.teelog.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>teelog</string>
+			</array>
+		</dict>
+	</array>
 	<!-- §10 privacy usage strings -->
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Dictation turns your spoken findings into log entries, entirely on-device.</string>
