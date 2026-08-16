@@ -1,6 +1,6 @@
 // swift-tools-version: 5.10
 //
-// TEELogCore — the pure-Swift core of TEE Log (models + engine).
+// ACTATEEAssistantCore — the pure-Swift core of ACTA TEE Assistant (models + engine).
 //
 // Every file in this target imports Foundation at most — NO UIKit/SwiftUI/
 // SwiftData/Speech/PDFKit. This keeps the engine (requirements, auto-
@@ -8,41 +8,41 @@
 // with `swift test`. The iOS app consumes this package via XcodeGen
 // (`project.yml`).
 //
-// Sources live inside the app tree (TEELog/Models, TEELog/Engine) so the
+// Sources live inside the app tree (ACTATEEAssistant/Models, ACTATEEAssistant/Engine) so the
 // on-disk structure matches IMPLEMENTATION.md §3; the app target excludes
-// these files (they are compiled here, once, into TEELogCore).
+// these files (they are compiled here, once, into ACTATEEAssistantCore).
 
 import PackageDescription
 
 let package = Package(
-    name: "TEELog",
+    name: "ACTA-TEE-Assistant",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .library(name: "TEELogCore", targets: ["TEELogCore"])
+        .library(name: "ACTATEEAssistantCore", targets: ["ACTATEEAssistantCore"])
     ],
     targets: [
         .target(
-            name: "TEELogCore",
+            name: "ACTATEEAssistantCore",
             path: ".",
             sources: [
-                "TEELog/Models/Enums.swift",
-                "TEELog/Models/Tracks.swift",
-                "TEELog/Models/CaseRecord.swift",
-                "TEELog/Engine/RequirementsEngine.swift",
-                "TEELog/Engine/AutoCategorizer.swift",
-                "TEELog/Engine/DictationMapper.swift",
-                "TEELog/Engine/ExportService.swift",
-                "TEELog/Engine/SpacedRepetition.swift",
-                "TEELog/Engine/QuizCardGenerator.swift",
-                "TEELog/Engine/InsightsEngine.swift"
+                "ACTATEEAssistant/Models/Enums.swift",
+                "ACTATEEAssistant/Models/Tracks.swift",
+                "ACTATEEAssistant/Models/CaseRecord.swift",
+                "ACTATEEAssistant/Engine/RequirementsEngine.swift",
+                "ACTATEEAssistant/Engine/AutoCategorizer.swift",
+                "ACTATEEAssistant/Engine/DictationMapper.swift",
+                "ACTATEEAssistant/Engine/ExportService.swift",
+                "ACTATEEAssistant/Engine/SpacedRepetition.swift",
+                "ACTATEEAssistant/Engine/QuizCardGenerator.swift",
+                "ACTATEEAssistant/Engine/InsightsEngine.swift"
             ]
         ),
         .testTarget(
-            name: "TEELogCoreTests",
-            dependencies: ["TEELogCore"],
-            path: "Tests/TEELogCoreTests"
+            name: "ACTATEEAssistantCoreTests",
+            dependencies: ["ACTATEEAssistantCore"],
+            path: "Tests/ACTATEEAssistantCoreTests"
         )
     ]
 )

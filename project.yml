@@ -1,10 +1,10 @@
-# XcodeGen project definition for TEE Log.
+# XcodeGen project definition for ACTA TEE Assistant.
 # Generate the .xcodeproj with: xcodegen generate
 # (the .xcodeproj itself is git-ignored; this file is the source of truth)
-name: TEELog
+name: ACTATEEAssistant
 
 options:
-  bundleIdPrefix: com.teelog
+  bundleIdPrefix: com.actatee
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -12,18 +12,18 @@ options:
   xcodeVersion: "15.0"
 
 packages:
-  TEELogCore:
+  ACTATEEAssistantCore:
     path: .
 
 targets:
-  TEELog:
+  ACTATEEAssistant:
     type: application
     platform: iOS
     sources:
-      - path: TEELog
-        # Core files are compiled once, into the TEELogCore package (see
+      - path: ACTATEEAssistant
+        # Core files are compiled once, into the ACTATEEAssistantCore package (see
         # Package.swift). Excluded here so the app module gets them via
-        # `import TEELogCore` — no duplicate/ambiguous types.
+        # `import ACTATEEAssistantCore` — no duplicate/ambiguous types.
         excludes:
           - Models/Enums.swift
           - Models/Tracks.swift
@@ -36,12 +36,12 @@ targets:
           - Engine/QuizCardGenerator.swift
           - Engine/InsightsEngine.swift
     dependencies:
-      - package: TEELogCore
-      - target: TEEWidget   # widget extension embedded in the app (F1)
+      - package: ACTATEEAssistantCore
+      - target: ACTATEEWidget   # widget extension embedded in the app (F1)
     info:
-      path: TEELog/Info.plist
+      path: ACTATEEAssistant/Info.plist
       properties:
-        CFBundleDisplayName: TEE Log
+        CFBundleDisplayName: ACTA TEE Assistant
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         LSRequiresIPhoneOS: true
@@ -49,21 +49,21 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         ITSAppUsesNonExemptEncryption: false
-        # teelog:// scheme — widget tap-through to Quick Log (F1)
+        # actatee:// scheme — widget tap-through to Quick Log (F1)
         CFBundleURLTypes:
-          - CFBundleURLName: com.teelog.app
+          - CFBundleURLName: com.actatee.app
             CFBundleURLSchemes:
-              - teelog
+              - actatee
         # §10 privacy usage strings
         NSSpeechRecognitionUsageDescription: "Dictation turns your spoken findings into log entries, entirely on-device."
         NSMicrophoneUsageDescription: "Used only for dictation while you hold the mic button."
         NSFaceIDUsageDescription: "Unlock your case log."
     entitlements:
-      path: TEELog/TEELog.entitlements
+      path: ACTATEEAssistant/ACTATEEAssistant.entitlements
       properties:
         # F1: shared store + preferences between app, intents, and widget
         com.apple.security.application-groups:
-          - group.com.teelog
+          - group.com.actatee
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -79,49 +79,49 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: YES
         ENABLE_USER_SCRIPT_SANDBOXING: YES
 
-  TEELogTests:
+  ACTATEEAssistantTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - path: Tests/TEELogCoreTests
+      - path: Tests/ACTATEEAssistantCoreTests
     dependencies:
-      - target: TEELog
-      - package: TEELogCore
+      - target: ACTATEEAssistant
+      - package: ACTATEEAssistantCore
     settings:
       base:
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
 
   # F1: WidgetKit extension — Lock Screen / Home Screen progress complication
-  # ("247/300"), tap-through to Quick Log via teelog://quicklog. Reads the
+  # ("247/300"), tap-through to Quick Log via actatee://quicklog. Reads the
   # shared App Group store (ModelContainerFactory), refreshed by
   # WidgetCenter.reloadAllTimelines() on every case save.
-  TEEWidget:
+  ACTATEEWidget:
     type: app-extension
     platform: iOS
     sources:
-      - path: TEEWidget
-      - path: TEELog/Shared
-      - path: TEELog/Models
+      - path: ACTATEEWidget
+      - path: ACTATEEAssistant/Shared
+      - path: ACTATEEAssistant/Models
         excludes:
-          # Core files compile into TEELogCore; the widget gets the @Model
+          # Core files compile into ACTATEEAssistantCore; the widget gets the @Model
           # entities (CaseLog/ValveFinding/QuizCard) so it can open the
-          # same SwiftData store (same pattern as the TEELog app target).
+          # same SwiftData store (same pattern as the ACTATEEAssistant app target).
           - Enums.swift
           - Tracks.swift
           - CaseRecord.swift
     dependencies:
-      - package: TEELogCore
+      - package: ACTATEEAssistantCore
     info:
-      path: TEEWidget/Info.plist
+      path: ACTATEEWidget/Info.plist
       properties:
-        CFBundleDisplayName: TEE Log Widget
+        CFBundleDisplayName: ACTA TEE Assistant Widget
         NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
-      path: TEEWidget/TEEWidget.entitlements
+      path: ACTATEEWidget/ACTATEEWidget.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.teelog
+          - group.com.actatee
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -134,14 +134,14 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
 
 schemes:
-  TEELog:
+  ACTATEEAssistant:
     build:
       targets:
-        TEELog: all
-        TEELogTests: [test]
+        ACTATEEAssistant: all
+        ACTATEEAssistantTests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - TEELogTests
+        - ACTATEEAssistantTests
