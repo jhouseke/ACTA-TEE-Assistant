@@ -146,9 +146,9 @@ struct InsightsView: View {
                 Chart(bars) { bar in
                     BarMark(
                         x: .value("Severity", bar.grade),
-                        y: .value("Cases", bar.count),
-                        foregroundStyle: by: .value("Lesion", bar.lesion)
+                        y: .value("Cases", bar.count)
                     )
+                    .foregroundStyle(by: .value("Lesion", bar.lesion))
                 }
                 .chartForegroundStyleScale(domain: lesions, range: palette.prefix(lesions.count).map { $0 })
                 .frame(height: 180)
@@ -240,9 +240,9 @@ struct InsightsView: View {
                 Chart(bars) { bar in
                     BarMark(
                         x: .value("Month", bar.month),
-                        y: .value("Cases", bar.count),
-                        foregroundStyle: by: .value("Procedure", bar.procedure)
+                        y: .value("Cases", bar.count)
                     )
+                    .foregroundStyle(by: .value("Procedure", bar.procedure))
                 }
                 .chartForegroundStyleScale(domain: procedures, range: palette.prefix(procedures.count).map { $0 })
                 .frame(height: 180)

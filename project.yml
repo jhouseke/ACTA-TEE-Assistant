@@ -66,6 +66,7 @@ targets:
           - group.com.actatee
     settings:
       base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.actatee.ACTATEEAssistant
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
@@ -116,7 +117,10 @@ targets:
       path: ACTATEEWidget/Info.plist
       properties:
         CFBundleDisplayName: ACTA TEE Assistant Widget
-        NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
       path: ACTATEEWidget/ACTATEEWidget.entitlements
       properties:
@@ -124,6 +128,7 @@ targets:
           - group.com.actatee
     settings:
       base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.actatee.ACTATEEAssistant.ACTATEEWidget
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         TARGETED_DEVICE_FAMILY: "1"

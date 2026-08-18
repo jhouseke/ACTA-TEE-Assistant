@@ -154,7 +154,12 @@ extension ExportService {
                 }
             } else if content.summaryRows.isEmpty, content.categoryRows.isEmpty {
                 ensure(24)
-                y = drawText("No cases in range.", at: y, font: bodyFont, color: .secondaryLabel)
+                y = drawText(
+                    "No cases in range.",
+                    at: CGPoint(x: Layout.margin, y: y),
+                    font: bodyFont,
+                    color: .secondaryLabel
+                )
             }
 
             pageNumber(page)

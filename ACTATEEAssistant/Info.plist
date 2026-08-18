@@ -15,22 +15,9 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
-	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>0.1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>UILaunchScreen</key>
-	<dict/>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<!-- F1: actatee:// scheme — widget complication tap-through to Quick Log -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -42,12 +29,23 @@
 			</array>
 		</dict>
 	</array>
-	<!-- §10 privacy usage strings -->
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Dictation turns your spoken findings into log entries, entirely on-device.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Used only for dictation while you hold the mic button.</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock your case log.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Used only for dictation while you hold the mic button.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Dictation turns your spoken findings into log entries, entirely on-device.</string>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 </dict>
 </plist>

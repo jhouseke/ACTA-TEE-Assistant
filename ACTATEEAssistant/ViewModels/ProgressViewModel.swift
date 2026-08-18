@@ -35,7 +35,7 @@ final class ProgressViewModel {
         focusProcedures = focus.map { RequirementsEngine.recommendedProcedures(for: $0.category) } ?? []
 
         let earliest = cases.map(\.examDate).min()
-        projectedDate = earliest.map {
+        projectedDate = earliest.flatMap {
             RequirementsEngine.projectedCompletionDate(
                 total: total,
                 totalMinimum: track.totalMinimum,

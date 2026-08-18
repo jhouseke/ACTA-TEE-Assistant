@@ -29,14 +29,14 @@ struct DictationSheet: View {
     private var title: String {
         guard let field else { return "Dictate" }
         switch field {
-        case .procedure: "Dictate procedure"
-        case .indication: "Dictate indication"
-        case .views: "Dictate views"
-        case .lvef: "Dictate LV EF"
-        case .rvFunction: "Dictate RV function"
-        case .valveLesions: "Dictate valve findings"
-        case .complications: "Dictate complications"
-        case .notes: "Dictate notes"
+        case .procedure: return "Dictate procedure"
+        case .indication: return "Dictate indication"
+        case .views: return "Dictate views"
+        case .lvef: return "Dictate LV EF"
+        case .rvFunction: return "Dictate RV function"
+        case .valveLesions: return "Dictate valve findings"
+        case .complications: return "Dictate complications"
+        case .notes: return "Dictate notes"
         }
     }
 
@@ -188,7 +188,7 @@ struct DictationSheet: View {
                 .font(.headline)
             Text(missedText(result))
                 .font(.subheadline)
-                .foregroundStyle(result.notes.isEmpty ? .secondary : .orange)
+                .foregroundStyle(result.notes.isEmpty ? Color.secondary : Color.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer()

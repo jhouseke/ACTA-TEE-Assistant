@@ -204,15 +204,15 @@ struct LibraryView: View {
     private func categoryColor(_ caseLog: CaseLog) -> Color {
         guard let first = caseLog.categoryTypes.first else { return .gray }
         switch first {
-        case .valvular: .red
-        case .ventricular: .blue
-        case .aorticPathology: .orange
-        case .structural: .purple
-        case .transplant: .teal
-        case .mcs: .indigo
-        case .ischemia: .pink
-        case .hemodynamic: .cyan
-        default: .gray
+        case .valvular: return .red
+        case .ventricular: return .blue
+        case .aorticPathology: return .orange
+        case .structural: return .purple
+        case .transplant: return .teal
+        case .mcs: return .indigo
+        case .ischemia: return .pink
+        case .hemodynamic: return .cyan
+        default: return .gray
         }
     }
 

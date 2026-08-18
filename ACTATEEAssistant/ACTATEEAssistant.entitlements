@@ -2,12 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- No network, no iCloud (IMPLEMENTATION.md §3/§10).
-	     F1: app group shares the SwiftData store + preferences with the
-	     widget extension and App Intents. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.teelog</string>
+		<string>group.com.actatee</string>
 	</array>
 </dict>
 </plist>

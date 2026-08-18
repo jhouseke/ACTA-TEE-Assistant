@@ -88,9 +88,7 @@ final class SpeechController {
 
         // Privacy: prefer on-device recognition (§9.1); only fall back to the
         // server when the hardware/locale can't do on-device.
-        if recognizer.supportsOnDeviceRecognition {
-            recognizer.requiresOnDeviceRecognition = true
-        } else {
+        guard recognizer.supportsOnDeviceRecognition else {
             lastError = .onDeviceUnavailable
             throw SpeechError.onDeviceUnavailable
         }
@@ -106,6 +104,7 @@ final class SpeechController {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
+        request.requiresOnDeviceRecognition = true
         self.request = request
 
         let inputNode = audioEngine.inputNode

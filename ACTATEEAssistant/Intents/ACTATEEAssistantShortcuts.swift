@@ -20,25 +20,60 @@ import SwiftData
 import WidgetKit
 import ACTATEEAssistantCore
 
-// MARK: - AppEnum conformances for intent parameters
+// MARK: - App-local intent parameter enums
 
-extension ProcedureType: AppEnum {
-    public static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        TypeDisplayRepresentation(name: "Procedure")
-    }
+/// App Intents metadata extraction requires the enum declaration to live in
+/// the app module. These wrappers keep the persisted/core enums framework-free.
+enum IntentProcedureType: String, AppEnum {
+    case cabg, avr, mvr, tvr, pvr, aorticRoot, ascendingAorta, typeADissection
+    case heartTransplant, lungTransplant
+    case lvad, rvad, ecmo, iabp
+    case tavr, tmvr, mitraclip, tricuspidClip, laao
+    case myectomy, maze, other
 
-    public static var caseDisplayRepresentations: [ProcedureType: DisplayRepresentation] {
-        Dictionary(uniqueKeysWithValues: allCases.map { ($0, DisplayRepresentation(title: "\($0.displayName)")) })
+    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Procedure")
+    static var caseDisplayRepresentations: [IntentProcedureType: DisplayRepresentation] = [
+        .cabg: "CABG",
+        .avr: "AVR",
+        .mvr: "MVR",
+        .tvr: "TVR",
+        .pvr: "PVR",
+        .aorticRoot: "Aortic root",
+        .ascendingAorta: "Ascending aorta",
+        .typeADissection: "Type A dissection",
+        .heartTransplant: "Heart transplant",
+        .lungTransplant: "Lung transplant",
+        .lvad: "LVAD",
+        .rvad: "RVAD",
+        .ecmo: "ECMO",
+        .iabp: "IABP",
+        .tavr: "TAVR",
+        .tmvr: "TMVR",
+        .mitraclip: "MitraClip",
+        .tricuspidClip: "Tricuspid clip",
+        .laao: "LAAO",
+        .myectomy: "Myectomy",
+        .maze: "Maze",
+        .other: "Other"
+    ]
+
+    var coreValue: ProcedureType {
+        ProcedureType(rawValue: rawValue) ?? .other
     }
 }
 
-extension TrackID: AppEnum {
-    public static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        TypeDisplayRepresentation(name: "Track")
-    }
+enum IntentTrackID: String, AppEnum {
+    case nbeAdvanced, nbeBasic, acgme
 
-    public static var caseDisplayRepresentations: [TrackID: DisplayRepresentation] {
-        Dictionary(uniqueKeysWithValues: allCases.map { ($0, DisplayRepresentation(title: "\($0.displayName)")) })
+    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Track")
+    static var caseDisplayRepresentations: [IntentTrackID: DisplayRepresentation] = [
+        .nbeAdvanced: "NBE Advanced PTEeXAM",
+        .nbeBasic: "NBE Basic PTE",
+        .acgme: "ACGME"
+    ]
+
+    var coreValue: TrackID {
+        TrackID(rawValue: rawValue) ?? .nbeAdvanced
     }
 }
 
@@ -79,21 +114,22 @@ struct LogTEECaseIntent: AppIntent {
         }
     }
 
-    @Parameter(title: "Procedure") var procedure: ProcedureType
+    @Parameter(title: "Procedure") var procedure: IntentProcedureType
     @Parameter(title: "Attending") var attending: String?
     @Parameter(title: "Exam date") var examDate: Date?
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let context = ModelContainerFactory.shared.mainContext
+        let procedureType = procedure.coreValue
 
         let caseLog = CaseLog(
             examDate: examDate ?? .now,
-            procedure: procedure.rawValue,
+            procedure: procedureType.rawValue,
             attendingName: attending ?? ""
         )
         caseLog.categories = AutoCategorizer.categorize(
-            procedure: procedure,
+            procedure: procedureType,
             indications: [],
             valveFindings: [],
             lvef: nil,
@@ -107,7 +143,7 @@ struct LogTEECaseIntent: AppIntent {
 
         let total = fetchAllCases().count
         return .result(
-            dialog: "Logged \(procedure.displayName) case — \(total) of \(Track.nbeAdvanced.totalMinimum)"
+            dialog: "Logged \(procedureType.displayName) case — \(total) of \(Track.nbeAdvanced.totalMinimum)"
         )
     }
 }
@@ -120,11 +156,11 @@ struct ShowProgressIntent: AppIntent {
         "Reports your current case totals against the selected requirement track."
     )
 
-    @Parameter(title: "Track") var track: TrackID?
+    @Parameter(title: "Track") var track: IntentTrackID?
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let trackID = track ?? .nbeAdvanced
+        let trackID = track?.coreValue ?? .nbeAdvanced
         let track = Track.track(id: trackID)
         let progress = RequirementsEngine.progress(cases: fetchAllCases(), track: track)
 
@@ -132,7 +168,7 @@ struct ShowProgressIntent: AppIntent {
         if let gap = RequirementsEngine.largestGap(progress.categories) {
             text += ", \(gap.gap) \(gap.category.displayName.lowercased()) to go"
         }
-        return .result(dialog: text)
+        return .result(dialog: "\(text)")
     }
 }
 
